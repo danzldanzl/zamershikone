@@ -4,7 +4,6 @@ export async function POST(request: NextRequest) {
   try {
     const { message, photos } = await request.json()
 
-    // ВАЖНО: Добавьте ваши данные Telegram бота
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8309074311:AAHqFUzmqSmMTa1NQBERxSjy1YVmaqG3pV4"
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "7455485161"
 
@@ -15,7 +14,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Отправка сообщения в Telegram
+    // Отправка текстового сообщения
     const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`
 
     const response = await fetch(telegramApiUrl, {
@@ -34,6 +33,35 @@ export async function POST(request: NextRequest) {
       const errorData = await response.json()
       console.error("Telegram API error:", errorData)
       throw new Error("Ошибка отправки в Telegram")
+    }
+
+    if (photos && photos.length > 0) {
+      for (const photoBase64 of photos) {
+        // Конвертируем base64 в blob
+        const base64Data = photoBase64.split(",")[1]
+        const byteCharacters = atob(base64Data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], { type: "image/jpeg" })
+
+        // Отправляем фото через FormData
+        const formData = new FormData()
+        formData.append("chat_id", TELEGRAM_CHAT_ID)
+        formData.append("photo", blob, "photo.jpg")
+
+        const photoUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`
+        const photoResponse = await fetch(photoUrl, {
+          method: "POST",
+          body: formData,
+        })
+
+        if (!photoResponse.ok) {
+          console.error("Error sending photo to Telegram")
+        }
+      }
     }
 
     return NextResponse.json({ success: true })

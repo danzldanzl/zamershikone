@@ -114,6 +114,15 @@ export default function MeasurementForm() {
     setPhotos((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = (error) => reject(error)
+    })
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -243,6 +252,8 @@ export default function MeasurementForm() {
         message += `\n📸 *Фото:* ${photos.length} шт.\n`
       }
 
+      const photosBase64 = await Promise.all(photos.map((photo) => fileToBase64(photo)))
+
       const response = await fetch("/api/send-telegram", {
         method: "POST",
         headers: {
@@ -250,7 +261,7 @@ export default function MeasurementForm() {
         },
         body: JSON.stringify({
           message,
-          photos: photos.map((photo) => photo.name),
+          photos: photosBase64,
         }),
       })
 
@@ -366,6 +377,7 @@ export default function MeasurementForm() {
                     name="area"
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     value={formData.area}
                     onChange={handleInputChange}
                     required
@@ -383,6 +395,7 @@ export default function MeasurementForm() {
                     name="perimeter"
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     value={formData.perimeter}
                     onChange={handleInputChange}
                     required
@@ -421,6 +434,7 @@ export default function MeasurementForm() {
                     id="chandelierPlatforms"
                     name="chandelierPlatforms"
                     type="number"
+                    inputMode="numeric"
                     value={formData.chandelierPlatforms}
                     onChange={handleInputChange}
                     placeholder="0"
@@ -436,6 +450,7 @@ export default function MeasurementForm() {
                     id="lightPlatforms"
                     name="lightPlatforms"
                     type="number"
+                    inputMode="numeric"
                     value={formData.lightPlatforms}
                     onChange={handleInputChange}
                     placeholder="0"
@@ -450,6 +465,7 @@ export default function MeasurementForm() {
                       id="lights"
                       name="lights"
                       type="number"
+                      inputMode="numeric"
                       value={formData.lights}
                       onChange={handleInputChange}
                       placeholder="0"
@@ -474,6 +490,7 @@ export default function MeasurementForm() {
                       name="trackMeters"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       value={formData.trackMeters}
                       onChange={handleInputChange}
                       placeholder="0.00"
@@ -498,6 +515,7 @@ export default function MeasurementForm() {
                     id="additionalCorners"
                     name="additionalCorners"
                     type="number"
+                    inputMode="numeric"
                     value={formData.additionalCorners}
                     onChange={handleInputChange}
                     placeholder="0"
@@ -513,6 +531,7 @@ export default function MeasurementForm() {
                     id="pipesProcessing"
                     name="pipesProcessing"
                     type="number"
+                    inputMode="numeric"
                     value={formData.pipesProcessing}
                     onChange={handleInputChange}
                     placeholder="0"
@@ -529,6 +548,7 @@ export default function MeasurementForm() {
                     name="beamInstallation"
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     value={formData.beamInstallation}
                     onChange={handleInputChange}
                     placeholder="0.00"
@@ -545,6 +565,7 @@ export default function MeasurementForm() {
                     name="curtainRodBase"
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     value={formData.curtainRodBase}
                     onChange={handleInputChange}
                     placeholder="0.00"
@@ -568,6 +589,7 @@ export default function MeasurementForm() {
                       name="hiddenCurtainRodMeters"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       value={formData.hiddenCurtainRodMeters}
                       onChange={handleInputChange}
                       placeholder="0.00"
@@ -584,6 +606,7 @@ export default function MeasurementForm() {
                     id="hiddenCurtainRodOffset"
                     name="hiddenCurtainRodOffset"
                     type="number"
+                    inputMode="numeric"
                     value={formData.hiddenCurtainRodOffset}
                     onChange={handleInputChange}
                     placeholder="0"
@@ -600,6 +623,7 @@ export default function MeasurementForm() {
                     name="pk15Plastic"
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     value={formData.pk15Plastic}
                     onChange={handleInputChange}
                     placeholder="0.00"
@@ -616,6 +640,7 @@ export default function MeasurementForm() {
                     name="pk15Metal"
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     value={formData.pk15Metal}
                     onChange={handleInputChange}
                     placeholder="0.00"
@@ -639,6 +664,7 @@ export default function MeasurementForm() {
                       name="curtainRod2RowQty"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       value={formData.curtainRod2RowQty}
                       onChange={handleInputChange}
                       placeholder="0.00"
@@ -663,6 +689,7 @@ export default function MeasurementForm() {
                       name="curtainRod3RowQty"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       value={formData.curtainRod3RowQty}
                       onChange={handleInputChange}
                       placeholder="0.00"
@@ -679,6 +706,7 @@ export default function MeasurementForm() {
                     id="curtainRodRoundings"
                     name="curtainRodRoundings"
                     type="number"
+                    inputMode="numeric"
                     value={formData.curtainRodRoundings}
                     onChange={handleInputChange}
                     placeholder="0"
@@ -695,6 +723,7 @@ export default function MeasurementForm() {
                     name="blenda"
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     value={formData.blenda}
                     onChange={handleInputChange}
                     placeholder="0.00"
@@ -718,6 +747,7 @@ export default function MeasurementForm() {
                       name="floatingQty"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       value={formData.floatingQty}
                       onChange={handleInputChange}
                       placeholder="0.00"
@@ -750,6 +780,7 @@ export default function MeasurementForm() {
                       name="lightLineQty"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       value={formData.lightLineQty}
                       onChange={handleInputChange}
                       placeholder="0.00"
@@ -767,6 +798,7 @@ export default function MeasurementForm() {
                     name="shadowProfile"
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     value={formData.shadowProfile}
                     onChange={handleInputChange}
                     placeholder="0.00"
@@ -790,6 +822,7 @@ export default function MeasurementForm() {
                       name="separatorProfileQty"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       value={formData.separatorProfileQty}
                       onChange={handleInputChange}
                       placeholder="0.00"
@@ -807,6 +840,7 @@ export default function MeasurementForm() {
                     name="wallProfile"
                     type="number"
                     step="0.01"
+                    inputMode="decimal"
                     value={formData.wallProfile}
                     onChange={handleInputChange}
                     placeholder="0.00"
@@ -822,6 +856,7 @@ export default function MeasurementForm() {
                       name="insert"
                       type="number"
                       step="0.01"
+                      inputMode="decimal"
                       value={formData.insert}
                       onChange={handleInputChange}
                       placeholder="0.00"
