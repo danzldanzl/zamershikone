@@ -10,108 +10,85 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
-import { Loader2, Upload, X } from "lucide-react"
+import { Loader2, Upload, X, Plus } from "lucide-react"
 
-interface FormData {
-  address: string
-  phone: string
+interface Room {
+  id: string
+  name: string
   area: string
   perimeter: string
   canvas: string
-  chandelierPlatforms: string
-  lightPlatforms: string
-  lights: string
-  lightType: string
-  trackType: string
-  trackMeters: string
-  additionalCorners: string
-  pipesProcessing: string
-  beamInstallation: string
-  curtainRodBase: string
-  hiddenCurtainRodType: string
-  hiddenCurtainRodMeters: string
-  hiddenCurtainRodOffset: string
-  pk15Plastic: string
-  pk15Metal: string
-  curtainRod2Row: string
-  curtainRod2RowQty: string
-  curtainRod3Row: string
-  curtainRod3RowQty: string
-  curtainRodRoundings: string
-  blenda: string
-  floatingWatt: string
-  floatingQty: string
-  lightLineWidth: string
-  lightLineWatt: string
-  lightLineQty: string
-  shadowProfile: string
-  separatorProfile: string
-  separatorProfileQty: string
-  wallProfile: string
-  insert: string
-  insertColor: string
   comment: string
+  photos: File[]
+}
+
+interface MainFormData {
+  address: string
+  phone: string
+  installDate: string
+  installPrice: string
 }
 
 export default function MeasurementForm() {
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [photos, setPhotos] = useState<File[]>([])
-  const [formData, setFormData] = useState<FormData>({
+
+  const [mainData, setMainData] = useState<MainFormData>({
     address: "",
     phone: "",
-    area: "",
-    perimeter: "",
-    canvas: "",
-    chandelierPlatforms: "",
-    lightPlatforms: "",
-    lights: "",
-    lightType: "",
-    trackType: "",
-    trackMeters: "",
-    additionalCorners: "",
-    pipesProcessing: "",
-    beamInstallation: "",
-    curtainRodBase: "",
-    hiddenCurtainRodType: "",
-    hiddenCurtainRodMeters: "",
-    hiddenCurtainRodOffset: "",
-    pk15Plastic: "",
-    pk15Metal: "",
-    curtainRod2Row: "",
-    curtainRod2RowQty: "",
-    curtainRod3Row: "",
-    curtainRod3RowQty: "",
-    curtainRodRoundings: "",
-    blenda: "",
-    floatingWatt: "",
-    floatingQty: "",
-    lightLineWidth: "",
-    lightLineWatt: "",
-    lightLineQty: "",
-    shadowProfile: "",
-    separatorProfile: "",
-    separatorProfileQty: "",
-    wallProfile: "",
-    insert: "",
-    insertColor: "",
-    comment: "",
+    installDate: "",
+    installPrice: "",
   })
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const [rooms, setRooms] = useState<Room[]>([
+    {
+      id: "1",
+      name: "",
+      area: "",
+      perimeter: "",
+      canvas: "",
+      comment: "",
+      photos: [],
+    },
+  ])
+
+  const handleMainDataChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    setMainData((prev) => ({ ...prev, [name]: value }))
   }
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRoomChange = (roomId: string, field: keyof Room, value: string) => {
+    setRooms((prev) => prev.map((room) => (room.id === roomId ? { ...room, [field]: value } : room)))
+  }
+
+  const handleRoomPhotoChange = (roomId: string, e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const newPhotos = Array.from(e.target.files)
-      setPhotos((prev) => [...prev, ...newPhotos])
+      setRooms((prev) =>
+        prev.map((room) => (room.id === roomId ? { ...room, photos: [...room.photos, ...newPhotos] } : room)),
+      )
     }
   }
 
-  const removePhoto = (index: number) => {
-    setPhotos((prev) => prev.filter((_, i) => i !== index))
+  const removeRoomPhoto = (roomId: string, photoIndex: number) => {
+    setRooms((prev) =>
+      prev.map((room) =>
+        room.id === roomId ? { ...room, photos: room.photos.filter((_, i) => i !== photoIndex) } : room,
+      ),
+    )
+  }
+
+  const addRoom = () => {
+    const newRoom: Room = {
+      id: Date.now().toString(),
+      name: "",
+      area: "",
+      perimeter: "",
+      canvas: "",
+      comment: "",
+      photos: [],
+    }
+    setRooms((prev) => [...prev, newRoom])
   }
 
   const fileToBase64 = (file: File): Promise<string> => {
@@ -130,129 +107,47 @@ export default function MeasurementForm() {
     try {
       let message = `📋 *Новый замер*\n\n`
 
-      // Основная информация (обязательные поля)
-      message += `📍 *Адрес:* ${formData.address}\n`
-      message += `📞 *Телефон:* ${formData.phone}\n`
-      message += `📐 *Площадь:* ${formData.area} м²\n`
-      message += `📏 *Периметр:* ${formData.perimeter} м.п.\n`
-      message += `🎨 *Полотно:* ${formData.canvas}\n`
+      message += `📍 *Адрес:* ${mainData.address}\n`
+      message += `📞 *Телефон:* ${mainData.phone}\n`
 
-      // Собираем дополнительную информацию только из заполненных полей
-      const additionalInfo: string[] = []
-
-      if (formData.chandelierPlatforms && formData.chandelierPlatforms !== "0") {
-        additionalInfo.push(`💡 Платформы под люстру: ${formData.chandelierPlatforms} шт.`)
-      }
-      if (formData.lightPlatforms && formData.lightPlatforms !== "0") {
-        additionalInfo.push(`💡 Платформы под светильники: ${formData.lightPlatforms} шт.`)
-      }
-      if (formData.lights && formData.lights !== "0") {
-        let lightInfo = `💡 Светильники: ${formData.lights} шт.`
-        if (formData.lightType) {
-          lightInfo += ` (${formData.lightType})`
-        }
-        additionalInfo.push(lightInfo)
-      }
-      if (formData.trackMeters && formData.trackMeters !== "0") {
-        let trackInfo = `🛤 Треки: ${formData.trackMeters} м.п.`
-        if (formData.trackType) {
-          trackInfo += ` (${formData.trackType})`
-        }
-        additionalInfo.push(trackInfo)
-      }
-      if (formData.additionalCorners && formData.additionalCorners !== "0") {
-        additionalInfo.push(`📐 Дополнительные углы: ${formData.additionalCorners} шт.`)
-      }
-      if (formData.pipesProcessing && formData.pipesProcessing !== "0") {
-        additionalInfo.push(`🔧 Обработка труб/вытяжки: ${formData.pipesProcessing} шт.`)
-      }
-      if (formData.beamInstallation && formData.beamInstallation !== "0") {
-        additionalInfo.push(`🪵 Монтаж бруса: ${formData.beamInstallation} м.п.`)
-      }
-      if (formData.curtainRodBase && formData.curtainRodBase !== "0") {
-        additionalInfo.push(`📏 Закладные под карниз: ${formData.curtainRodBase} м.п.`)
-      }
-      if (formData.hiddenCurtainRodMeters && formData.hiddenCurtainRodMeters !== "0") {
-        let hiddenInfo = `🎭 Скрытый карниз: ${formData.hiddenCurtainRodMeters} м.п.`
-        if (formData.hiddenCurtainRodType) {
-          hiddenInfo += ` (${formData.hiddenCurtainRodType})`
-        }
-        if (formData.hiddenCurtainRodOffset && formData.hiddenCurtainRodOffset !== "0") {
-          hiddenInfo += `, отступ ${formData.hiddenCurtainRodOffset} см`
-        }
-        additionalInfo.push(hiddenInfo)
-      }
-      if (formData.pk15Plastic && formData.pk15Plastic !== "0") {
-        additionalInfo.push(`📏 Карниз ПК-15 пластик: ${formData.pk15Plastic} м.п.`)
-      }
-      if (formData.pk15Metal && formData.pk15Metal !== "0") {
-        additionalInfo.push(`📏 Карниз ПК-15 металл: ${formData.pk15Metal} м.п.`)
-      }
-      if (formData.curtainRod2RowQty && formData.curtainRod2RowQty !== "0") {
-        additionalInfo.push(`📏 Карниз 2-х рядный: ${formData.curtainRod2RowQty} м.п.`)
-      }
-      if (formData.curtainRod3RowQty && formData.curtainRod3RowQty !== "0") {
-        additionalInfo.push(`📏 Карниз 3-х рядный: ${formData.curtainRod3RowQty} м.п.`)
-      }
-      if (formData.curtainRodRoundings && formData.curtainRodRoundings !== "0") {
-        additionalInfo.push(`🔄 Закругления для карниза: ${formData.curtainRodRoundings} пар`)
-      }
-      if (formData.blenda && formData.blenda !== "0") {
-        additionalInfo.push(`📏 Бленда: ${formData.blenda} м.п.`)
-      }
-      if (formData.floatingQty && formData.floatingQty !== "0") {
-        let floatingInfo = `✨ Парящий: ${formData.floatingQty} м.п.`
-        if (formData.floatingWatt) {
-          floatingInfo += ` (${formData.floatingWatt})`
-        }
-        additionalInfo.push(floatingInfo)
-      }
-      if (formData.lightLineQty && formData.lightLineQty !== "0") {
-        let lightLineInfo = `💡 Световая линия: ${formData.lightLineQty} м.п.`
-        const details: string[] = []
-        if (formData.lightLineWidth) details.push(formData.lightLineWidth)
-        if (formData.lightLineWatt) details.push(formData.lightLineWatt)
-        if (details.length > 0) {
-          lightLineInfo += ` (${details.join(", ")})`
-        }
-        additionalInfo.push(lightLineInfo)
-      }
-      if (formData.shadowProfile && formData.shadowProfile !== "0") {
-        additionalInfo.push(`🌑 Теневой профиль: ${formData.shadowProfile} м.п.`)
-      }
-      if (formData.separatorProfileQty && formData.separatorProfileQty !== "0") {
-        let separatorInfo = `➗ Разделительный профиль: ${formData.separatorProfileQty} м.п.`
-        if (formData.separatorProfile) {
-          separatorInfo += ` (${formData.separatorProfile})`
-        }
-        additionalInfo.push(separatorInfo)
-      }
-      if (formData.wallProfile && formData.wallProfile !== "0") {
-        additionalInfo.push(`🧱 Профиль стеновой: ${formData.wallProfile} м.п.`)
-      }
-      if (formData.insert && formData.insert !== "0") {
-        let insertInfo = `🎨 Вставка: ${formData.insert} м.п.`
-        if (formData.insertColor) {
-          insertInfo += `, цвет: ${formData.insertColor}`
-        }
-        additionalInfo.push(insertInfo)
+      if (mainData.installDate && mainData.installDate.trim()) {
+        message += `📅 *Дата монтажа:* ${mainData.installDate}\n`
       }
 
-      // Добавляем дополнительную информацию, если есть заполненные поля
-      if (additionalInfo.length > 0) {
-        message += `\n*Дополнительная информация:*\n`
-        message += additionalInfo.join("\n") + "\n"
+      if (mainData.installPrice && mainData.installPrice.trim()) {
+        message += `💰 *Сумма монтажа:* ${mainData.installPrice}\n`
       }
 
-      if (formData.comment && formData.comment.trim()) {
-        message += `\n💬 *Комментарий:*\n${formData.comment}\n`
+      const allPhotos: File[] = []
+
+      for (const room of rooms) {
+        if (room.name || room.area || room.perimeter || room.canvas) {
+          message += `\n🏠 *Комната "${room.name || "Без названия"}"*\n`
+
+          if (room.area && room.area.trim()) {
+            message += `📐 Площадь: ${room.area} м²\n`
+          }
+
+          if (room.perimeter && room.perimeter.trim()) {
+            message += `📏 Периметр: ${room.perimeter} м.п.\n`
+          }
+
+          if (room.canvas && room.canvas.trim()) {
+            message += `🎨 Полотно: ${room.canvas}\n`
+          }
+
+          if (room.comment && room.comment.trim()) {
+            message += `💬 Комментарий: ${room.comment}\n`
+          }
+
+          if (room.photos.length > 0) {
+            message += `📸 Фото: ${room.photos.length} шт.\n`
+            allPhotos.push(...room.photos)
+          }
+        }
       }
 
-      if (photos.length > 0) {
-        message += `\n📸 *Фото:* ${photos.length} шт.\n`
-      }
-
-      const photosBase64 = await Promise.all(photos.map((photo) => fileToBase64(photo)))
+      const photosBase64 = await Promise.all(allPhotos.map((photo) => fileToBase64(photo)))
 
       const response = await fetch("/api/send-telegram", {
         method: "POST",
@@ -274,48 +169,23 @@ export default function MeasurementForm() {
         description: "Данные замера отправлены в Telegram",
       })
 
-      // Очистка формы
-      setFormData({
+      setMainData({
         address: "",
         phone: "",
-        area: "",
-        perimeter: "",
-        canvas: "",
-        chandelierPlatforms: "",
-        lightPlatforms: "",
-        lights: "",
-        lightType: "",
-        trackType: "",
-        trackMeters: "",
-        additionalCorners: "",
-        pipesProcessing: "",
-        beamInstallation: "",
-        curtainRodBase: "",
-        hiddenCurtainRodType: "",
-        hiddenCurtainRodMeters: "",
-        hiddenCurtainRodOffset: "",
-        pk15Plastic: "",
-        pk15Metal: "",
-        curtainRod2Row: "",
-        curtainRod2RowQty: "",
-        curtainRod3Row: "",
-        curtainRod3RowQty: "",
-        curtainRodRoundings: "",
-        blenda: "",
-        floatingWatt: "",
-        floatingQty: "",
-        lightLineWidth: "",
-        lightLineWatt: "",
-        lightLineQty: "",
-        shadowProfile: "",
-        separatorProfile: "",
-        separatorProfileQty: "",
-        wallProfile: "",
-        insert: "",
-        insertColor: "",
-        comment: "",
+        installDate: "",
+        installPrice: "",
       })
-      setPhotos([])
+      setRooms([
+        {
+          id: "1",
+          name: "",
+          area: "",
+          perimeter: "",
+          canvas: "",
+          comment: "",
+          photos: [],
+        },
+      ])
     } catch (error) {
       toast({
         title: "Ошибка",
@@ -344,8 +214,8 @@ export default function MeasurementForm() {
                   <Input
                     id="address"
                     name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
+                    value={mainData.address}
+                    onChange={handleMainDataChange}
                     required
                     placeholder="Введите адрес"
                     className="text-sm md:text-base h-9 md:h-10"
@@ -360,8 +230,8 @@ export default function MeasurementForm() {
                     id="phone"
                     name="phone"
                     type="tel"
-                    value={formData.phone}
-                    onChange={handleInputChange}
+                    value={mainData.phone}
+                    onChange={handleMainDataChange}
                     required
                     placeholder="+375 (__) ___-__-__"
                     className="text-sm md:text-base h-9 md:h-10"
@@ -369,580 +239,176 @@ export default function MeasurementForm() {
                 </div>
 
                 <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="area" className="text-sm md:text-base">
-                    Площадь (м²) *
+                  <Label htmlFor="installDate" className="text-sm md:text-base">
+                    Дата монтажа
                   </Label>
                   <Input
-                    id="area"
-                    name="area"
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={formData.area}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="0.00"
+                    id="installDate"
+                    name="installDate"
+                    type="date"
+                    value={mainData.installDate}
+                    onChange={handleMainDataChange}
                     className="text-sm md:text-base h-9 md:h-10"
                   />
                 </div>
 
                 <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="perimeter" className="text-sm md:text-base">
-                    Периметр (м.п.) *
+                  <Label htmlFor="installPrice" className="text-sm md:text-base">
+                    Сумма монтажа
                   </Label>
                   <Input
-                    id="perimeter"
-                    name="perimeter"
+                    id="installPrice"
+                    name="installPrice"
                     type="number"
                     step="0.01"
                     inputMode="decimal"
-                    value={formData.perimeter}
-                    onChange={handleInputChange}
-                    required
+                    value={mainData.installPrice}
+                    onChange={handleMainDataChange}
                     placeholder="0.00"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="canvas" className="text-sm md:text-base">
-                    Полотно *
-                  </Label>
-                  <Input
-                    id="canvas"
-                    name="canvas"
-                    value={formData.canvas}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Опишите тип полотна"
                     className="text-sm md:text-base h-9 md:h-10"
                   />
                 </div>
               </div>
             </div>
 
-            {/* Дополнительная информация */}
-            <div className="space-y-3 md:space-y-4">
-              <h2 className="text-lg md:text-2xl font-semibold text-foreground">Дополнительная информация</h2>
+            {rooms.map((room, index) => (
+              <div key={room.id} className="space-y-3 md:space-y-4 border-t-2 border-border pt-4 md:pt-6">
+                <h2 className="text-lg md:text-2xl font-semibold text-foreground">Комната {index + 1}</h2>
 
-              <div className="space-y-3 md:space-y-4">
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="chandelierPlatforms" className="text-sm md:text-base">
-                    Платформы под люстру (шт.)
-                  </Label>
-                  <Input
-                    id="chandelierPlatforms"
-                    name="chandelierPlatforms"
-                    type="number"
-                    inputMode="numeric"
-                    value={formData.chandelierPlatforms}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="lightPlatforms" className="text-sm md:text-base">
-                    Платформы под светильники (шт.)
-                  </Label>
-                  <Input
-                    id="lightPlatforms"
-                    name="lightPlatforms"
-                    type="number"
-                    inputMode="numeric"
-                    value={formData.lightPlatforms}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="text-sm md:text-base">Светильники (шт.) + Тип светильника</Label>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
+                <div className="space-y-3 md:space-y-4">
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor={`roomName-${room.id}`} className="text-sm md:text-base">
+                      Название комнаты
+                    </Label>
                     <Input
-                      id="lights"
-                      name="lights"
-                      type="number"
-                      inputMode="numeric"
-                      value={formData.lights}
-                      onChange={handleInputChange}
-                      placeholder="0"
+                      id={`roomName-${room.id}`}
+                      value={room.name}
+                      onChange={(e) => handleRoomChange(room.id, "name", e.target.value)}
+                      placeholder="Например: Спальня, Кухня"
                       className="text-sm md:text-base h-9 md:h-10"
                     />
-                    <Input
-                      id="lightType"
-                      name="lightType"
-                      value={formData.lightType}
-                      onChange={handleInputChange}
-                      placeholder="Название типа"
-                      className="col-span-2 text-sm md:text-base h-9 md:h-10"
-                    />
                   </div>
-                </div>
 
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="text-sm md:text-base">Треки (м.п.) + Тип трека</Label>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor={`area-${room.id}`} className="text-sm md:text-base">
+                      Площадь (м²)
+                    </Label>
                     <Input
-                      id="trackMeters"
-                      name="trackMeters"
+                      id={`area-${room.id}`}
                       type="number"
                       step="0.01"
                       inputMode="decimal"
-                      value={formData.trackMeters}
-                      onChange={handleInputChange}
-                      placeholder="0.00"
-                      className="text-sm md:text-base h-9 md:h-10"
-                    />
-                    <Input
-                      id="trackType"
-                      name="trackType"
-                      value={formData.trackType}
-                      onChange={handleInputChange}
-                      placeholder="накладной/встроенный"
-                      className="col-span-2 text-sm md:text-base h-9 md:h-10"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="additionalCorners" className="text-sm md:text-base">
-                    Дополнительные углы (шт.)
-                  </Label>
-                  <Input
-                    id="additionalCorners"
-                    name="additionalCorners"
-                    type="number"
-                    inputMode="numeric"
-                    value={formData.additionalCorners}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="pipesProcessing" className="text-sm md:text-base">
-                    Обработка труб/вытяжки (шт.)
-                  </Label>
-                  <Input
-                    id="pipesProcessing"
-                    name="pipesProcessing"
-                    type="number"
-                    inputMode="numeric"
-                    value={formData.pipesProcessing}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="beamInstallation" className="text-sm md:text-base">
-                    Монтаж бруса (м.п.)
-                  </Label>
-                  <Input
-                    id="beamInstallation"
-                    name="beamInstallation"
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={formData.beamInstallation}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="curtainRodBase" className="text-sm md:text-base">
-                    Закладные под карниз (м.п.)
-                  </Label>
-                  <Input
-                    id="curtainRodBase"
-                    name="curtainRodBase"
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={formData.curtainRodBase}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="text-sm md:text-base">Скрытый карниз: Тип + Количество (м.п.)</Label>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
-                    <Input
-                      id="hiddenCurtainRodType"
-                      name="hiddenCurtainRodType"
-                      value={formData.hiddenCurtainRodType}
-                      onChange={handleInputChange}
-                      placeholder="с/без доворота"
-                      className="col-span-2 text-sm md:text-base h-9 md:h-10"
-                    />
-                    <Input
-                      id="hiddenCurtainRodMeters"
-                      name="hiddenCurtainRodMeters"
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={formData.hiddenCurtainRodMeters}
-                      onChange={handleInputChange}
+                      value={room.area}
+                      onChange={(e) => handleRoomChange(room.id, "area", e.target.value)}
                       placeholder="0.00"
                       className="text-sm md:text-base h-9 md:h-10"
                     />
                   </div>
-                </div>
 
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="hiddenCurtainRodOffset" className="text-sm md:text-base">
-                    Скрытый карниз: Отступ (см)
-                  </Label>
-                  <Input
-                    id="hiddenCurtainRodOffset"
-                    name="hiddenCurtainRodOffset"
-                    type="number"
-                    inputMode="numeric"
-                    value={formData.hiddenCurtainRodOffset}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="pk15Plastic" className="text-sm md:text-base">
-                    Карниз ПК-15 пластик (м.п.)
-                  </Label>
-                  <Input
-                    id="pk15Plastic"
-                    name="pk15Plastic"
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={formData.pk15Plastic}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="pk15Metal" className="text-sm md:text-base">
-                    Карниз ПК-15 металл (м.п.)
-                  </Label>
-                  <Input
-                    id="pk15Metal"
-                    name="pk15Metal"
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={formData.pk15Metal}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="text-sm md:text-base">Карниз 2-х рядный + Количество (м.п.)</Label>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor={`perimeter-${room.id}`} className="text-sm md:text-base">
+                      Периметр (м.п.)
+                    </Label>
                     <Input
-                      id="curtainRod2Row"
-                      name="curtainRod2Row"
-                      value={formData.curtainRod2Row}
-                      onChange={handleInputChange}
-                      placeholder="2-х рядный"
-                      className="col-span-2 text-sm md:text-base h-9 md:h-10"
-                    />
-                    <Input
-                      id="curtainRod2RowQty"
-                      name="curtainRod2RowQty"
+                      id={`perimeter-${room.id}`}
                       type="number"
                       step="0.01"
                       inputMode="decimal"
-                      value={formData.curtainRod2RowQty}
-                      onChange={handleInputChange}
+                      value={room.perimeter}
+                      onChange={(e) => handleRoomChange(room.id, "perimeter", e.target.value)}
                       placeholder="0.00"
                       className="text-sm md:text-base h-9 md:h-10"
                     />
                   </div>
-                </div>
 
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="text-sm md:text-base">Карниз 3-х рядный + Количество (м.п.)</Label>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor={`canvas-${room.id}`} className="text-sm md:text-base">
+                      Полотно
+                    </Label>
                     <Input
-                      id="curtainRod3Row"
-                      name="curtainRod3Row"
-                      value={formData.curtainRod3Row}
-                      onChange={handleInputChange}
-                      placeholder="3-х рядный"
-                      className="col-span-2 text-sm md:text-base h-9 md:h-10"
-                    />
-                    <Input
-                      id="curtainRod3RowQty"
-                      name="curtainRod3RowQty"
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={formData.curtainRod3RowQty}
-                      onChange={handleInputChange}
-                      placeholder="0.00"
+                      id={`canvas-${room.id}`}
+                      value={room.canvas}
+                      onChange={(e) => handleRoomChange(room.id, "canvas", e.target.value)}
+                      placeholder="Опишите тип полотна"
                       className="text-sm md:text-base h-9 md:h-10"
                     />
                   </div>
-                </div>
 
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="curtainRodRoundings" className="text-sm md:text-base">
-                    Закругления для карниза (пар)
-                  </Label>
-                  <Input
-                    id="curtainRodRoundings"
-                    name="curtainRodRoundings"
-                    type="number"
-                    inputMode="numeric"
-                    value={formData.curtainRodRoundings}
-                    onChange={handleInputChange}
-                    placeholder="0"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="blenda" className="text-sm md:text-base">
-                    Бленда (м.п.)
-                  </Label>
-                  <Input
-                    id="blenda"
-                    name="blenda"
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={formData.blenda}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="text-sm md:text-base">Парящий (мощность) + Количество (м.п.)</Label>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
-                    <Input
-                      id="floatingWatt"
-                      name="floatingWatt"
-                      value={formData.floatingWatt}
-                      onChange={handleInputChange}
-                      placeholder="9.6 / 19.6 ват"
-                      className="col-span-2 text-sm md:text-base h-9 md:h-10"
-                    />
-                    <Input
-                      id="floatingQty"
-                      name="floatingQty"
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={formData.floatingQty}
-                      onChange={handleInputChange}
-                      placeholder="0.00"
-                      className="text-sm md:text-base h-9 md:h-10"
+                  <div className="space-y-1.5 md:space-y-2">
+                    <Label htmlFor={`roomComment-${room.id}`} className="text-sm md:text-base">
+                      Комментарий
+                    </Label>
+                    <Textarea
+                      id={`roomComment-${room.id}`}
+                      value={room.comment}
+                      onChange={(e) => handleRoomChange(room.id, "comment", e.target.value)}
+                      placeholder="Дополнительная информация..."
+                      className="text-sm md:text-base min-h-[40vh] resize-y"
                     />
                   </div>
-                </div>
 
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="text-sm md:text-base">Световая линия (ширина) + Мощность + Количество (м.п.)</Label>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
-                    <Input
-                      id="lightLineWidth"
-                      name="lightLineWidth"
-                      value={formData.lightLineWidth}
-                      onChange={handleInputChange}
-                      placeholder="3 см"
-                      className="text-sm md:text-base h-9 md:h-10"
-                    />
-                    <Input
-                      id="lightLineWatt"
-                      name="lightLineWatt"
-                      value={formData.lightLineWatt}
-                      onChange={handleInputChange}
-                      placeholder="19.6 / 39.2 ват"
-                      className="text-sm md:text-base h-9 md:h-10"
-                    />
-                    <Input
-                      id="lightLineQty"
-                      name="lightLineQty"
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={formData.lightLineQty}
-                      onChange={handleInputChange}
-                      placeholder="0.00"
-                      className="text-sm md:text-base h-9 md:h-10"
-                    />
+                  <div className="space-y-3 md:space-y-4">
+                    <Label htmlFor={`photos-${room.id}`} className="text-sm md:text-base">
+                      Фото
+                    </Label>
+                    <div className="flex flex-col gap-3 md:gap-4">
+                      <div className="flex items-center gap-3 md:gap-4">
+                        <Input
+                          id={`photos-${room.id}`}
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => handleRoomPhotoChange(room.id, e)}
+                          className="hidden"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => document.getElementById(`photos-${room.id}`)?.click()}
+                          className="w-full md:w-auto text-sm md:text-base h-9 md:h-10"
+                        >
+                          <Upload className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                          Добавить фото
+                        </Button>
+                      </div>
+                      {room.photos.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+                          {room.photos.map((photo, photoIndex) => (
+                            <div
+                              key={photoIndex}
+                              className="relative group rounded-lg overflow-hidden border border-border"
+                            >
+                              <img
+                                src={URL.createObjectURL(photo) || "/placeholder.svg"}
+                                alt={`Фото ${photoIndex + 1}`}
+                                className="w-full h-24 md:h-32 object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeRoomPhoto(room.id, photoIndex)}
+                                className="absolute top-1 right-1 md:top-2 md:right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3 md:h-4 md:w-4" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="shadowProfile" className="text-sm md:text-base">
-                    Теневой профиль (м.п.)
-                  </Label>
-                  <Input
-                    id="shadowProfile"
-                    name="shadowProfile"
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={formData.shadowProfile}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="text-sm md:text-base">Разделительный профиль (тип) + Количество (м.п.)</Label>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
-                    <Input
-                      id="separatorProfile"
-                      name="separatorProfile"
-                      value={formData.separatorProfile}
-                      onChange={handleInputChange}
-                      placeholder="обычный/теневой"
-                      className="col-span-2 text-sm md:text-base h-9 md:h-10"
-                    />
-                    <Input
-                      id="separatorProfileQty"
-                      name="separatorProfileQty"
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={formData.separatorProfileQty}
-                      onChange={handleInputChange}
-                      placeholder="0.00"
-                      className="text-sm md:text-base h-9 md:h-10"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label htmlFor="wallProfile" className="text-sm md:text-base">
-                    Профиль стеновой (м.п.)
-                  </Label>
-                  <Input
-                    id="wallProfile"
-                    name="wallProfile"
-                    type="number"
-                    step="0.01"
-                    inputMode="decimal"
-                    value={formData.wallProfile}
-                    onChange={handleInputChange}
-                    placeholder="0.00"
-                    className="text-sm md:text-base h-9 md:h-10"
-                  />
-                </div>
-
-                <div className="space-y-1.5 md:space-y-2">
-                  <Label className="text-sm md:text-base">Вставка (м.п.) + Цвет вставки</Label>
-                  <div className="grid grid-cols-3 gap-2 md:gap-4">
-                    <Input
-                      id="insert"
-                      name="insert"
-                      type="number"
-                      step="0.01"
-                      inputMode="decimal"
-                      value={formData.insert}
-                      onChange={handleInputChange}
-                      placeholder="0.00"
-                      className="text-sm md:text-base h-9 md:h-10"
-                    />
-                    <Input
-                      id="insertColor"
-                      name="insertColor"
-                      value={formData.insertColor}
-                      onChange={handleInputChange}
-                      placeholder="Укажите цвет"
-                      className="col-span-2 text-sm md:text-base h-9 md:h-10"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Комментарий */}
-            <div className="space-y-1.5 md:space-y-2">
-              <Label htmlFor="comment" className="text-sm md:text-base">
-                Комментарий к замеру
-              </Label>
-              <Textarea
-                id="comment"
-                name="comment"
-                value={formData.comment}
-                onChange={handleInputChange}
-                placeholder="Дополнительная информация..."
-                rows={4}
-                className="text-sm md:text-base"
-              />
-            </div>
-
-            <div className="space-y-3 md:space-y-4">
-              <Label htmlFor="photos" className="text-sm md:text-base">
-                Фото
-              </Label>
-              <div className="flex flex-col gap-3 md:gap-4">
-                <div className="flex items-center gap-3 md:gap-4">
-                  <Input
-                    id="photos"
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoChange}
-                    className="hidden"
-                  />
                   <Button
                     type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById("photos")?.click()}
-                    className="w-full md:w-auto text-sm md:text-base h-9 md:h-10"
+                    onClick={addRoom}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white text-sm md:text-base h-9 md:h-10"
                   >
-                    <Upload className="mr-2 h-4 w-4 md:h-5 md:w-5" />
-                    Добавить фото
+                    <Plus className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                    Добавить комнату
                   </Button>
-                  {photos.length > 0 && (
-                    <span className="text-xs md:text-sm text-muted-foreground">Загружено: {photos.length} фото</span>
-                  )}
                 </div>
-                {photos.length > 0 && (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative group rounded-lg overflow-hidden border border-border">
-                        <img
-                          src={URL.createObjectURL(photo) || "/placeholder.svg"}
-                          alt={`Фото ${index + 1}`}
-                          className="w-full h-24 md:h-32 object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(index)}
-                          className="absolute top-1 right-1 md:top-2 md:right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3 md:h-4 md:w-4" />
-                        </button>
-                        <p className="text-xs text-muted-foreground p-1.5 md:p-2 truncate">{photo.name}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
-            </div>
+            ))}
 
-            {/* Кнопка отправки */}
             <Button
               type="submit"
               disabled={isSubmitting}

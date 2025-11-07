@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Отправка текстового сообщения
     const telegramApiUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`
 
     const response = await fetch(telegramApiUrl, {
@@ -26,6 +25,14 @@ export async function POST(request: NextRequest) {
         chat_id: TELEGRAM_CHAT_ID,
         text: message,
         parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "Заказано", callback_data: "order_confirmed" },
+              { text: "Отказ", callback_data: "order_rejected" },
+            ],
+          ],
+        },
       }),
     })
 
@@ -37,7 +44,6 @@ export async function POST(request: NextRequest) {
 
     if (photos && photos.length > 0) {
       for (const photoBase64 of photos) {
-        // Конвертируем base64 в blob
         const base64Data = photoBase64.split(",")[1]
         const byteCharacters = atob(base64Data)
         const byteNumbers = new Array(byteCharacters.length)
@@ -47,7 +53,6 @@ export async function POST(request: NextRequest) {
         const byteArray = new Uint8Array(byteNumbers)
         const blob = new Blob([byteArray], { type: "image/jpeg" })
 
-        // Отправляем фото через FormData
         const formData = new FormData()
         formData.append("chat_id", TELEGRAM_CHAT_ID)
         formData.append("photo", blob, "photo.jpg")
