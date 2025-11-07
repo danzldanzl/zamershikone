@@ -25,14 +25,6 @@ export async function POST(request: NextRequest) {
         chat_id: TELEGRAM_CHAT_ID,
         text: message,
         parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [
-              { text: "Заказано", callback_data: "order_confirmed" },
-              { text: "Отказ", callback_data: "order_rejected" },
-            ],
-          ],
-        },
       }),
     })
 
