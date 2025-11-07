@@ -35,29 +35,42 @@ export async function POST(request: NextRequest) {
     }
 
     if (photos && photos.length > 0) {
-      for (const photoBase64 of photos) {
-        const base64Data = photoBase64.split(",")[1]
-        const byteCharacters = atob(base64Data)
-        const byteNumbers = new Array(byteCharacters.length)
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i)
-        }
-        const byteArray = new Uint8Array(byteNumbers)
-        const blob = new Blob([byteArray], { type: "image/jpeg" })
+      const mediaGroup = await Promise.all(
+        photos.map(async (photoBase64: string, index: number) => {
+          const base64Data = photoBase64.split(",")[1]
+          const byteCharacters = atob(base64Data)
+          const byteNumbers = new Array(byteCharacters.length)
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+          }
+          const byteArray = new Uint8Array(byteNumbers)
+          const blob = new Blob([byteArray], { type: "image/jpeg" })
 
-        const formData = new FormData()
-        formData.append("chat_id", TELEGRAM_CHAT_ID)
-        formData.append("photo", blob, "photo.jpg")
+          const buffer = await blob.arrayBuffer()
+          const base64 = Buffer.from(buffer).toString("base64")
 
-        const photoUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`
-        const photoResponse = await fetch(photoUrl, {
-          method: "POST",
-          body: formData,
-        })
+          return {
+            type: "photo",
+            media: `data:image/jpeg;base64,${base64}`,
+          }
+        }),
+      )
 
-        if (!photoResponse.ok) {
-          console.error("Error sending photo to Telegram")
-        }
+      const mediaGroupUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMediaGroup`
+      const mediaResponse = await fetch(mediaGroupUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: TELEGRAM_CHAT_ID,
+          media: mediaGroup,
+        }),
+      })
+
+      if (!mediaResponse.ok) {
+        const errorData = await mediaResponse.json()
+        console.error("Error sending photos to Telegram:", errorData)
       }
     }
 
