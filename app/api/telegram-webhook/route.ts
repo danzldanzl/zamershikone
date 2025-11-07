@@ -12,16 +12,7 @@ export async function POST(request: NextRequest) {
       const chatId = callbackQuery.message.chat.id
       const callbackData = callbackQuery.data
 
-      let newText = ""
-
-      if (callbackData === "order_confirmed") {
-        newText = callbackQuery.message.text + "\n\n✅ *Заказ полотна выполнен*"
-      } else if (callbackData === "order_rejected") {
-        newText = callbackQuery.message.text + "\n\n❌ *Отказ от работ*"
-      }
-
-      // Edit message and remove inline keyboard
-      const editUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editMessageText`
+      const editUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/editMessageReplyMarkup`
       await fetch(editUrl, {
         method: "POST",
         headers: {
@@ -30,7 +21,26 @@ export async function POST(request: NextRequest) {
         body: JSON.stringify({
           chat_id: chatId,
           message_id: messageId,
-          text: newText,
+          reply_markup: { inline_keyboard: [] },
+        }),
+      })
+
+      let statusMessage = ""
+      if (callbackData === "order_confirmed") {
+        statusMessage = "✅ *Заказ полотна выполнен*"
+      } else if (callbackData === "order_rejected") {
+        statusMessage = "❌ *Отказ от работ*"
+      }
+
+      const sendUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`
+      await fetch(sendUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: statusMessage,
           parse_mode: "Markdown",
         }),
       })
