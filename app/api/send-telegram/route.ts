@@ -4,8 +4,8 @@ export async function POST(request: NextRequest) {
   try {
     const { message, photos } = await request.json()
 
-    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8309074311:AAHqFUzmqSmMTa1NQBERxSjy1YVmaqG3pV4"
-    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "7455485161"
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "8580698022:AAGAnYEyPaT070jDrWjDhDIBhU6eYWys_S0"
+    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || "345563724"
 
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
       return NextResponse.json(
